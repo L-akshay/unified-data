@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Aggregator</title>
+    <style>
+        :root {
+            --primary-color: #1a1c1e;
+            --secondary-color: #2d3748;
+            --accent-color: #4299e1;
+            --text-color: #e2e8f0;
+            --border-color: #4a5568;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--secondary-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .query-form {
+            background: var(--secondary-color);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        button {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background: #3182ce;
+        }
+
+        .results {
+            background: var(--secondary-color);
+            padding: 2rem;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: var(--accent-color);
+        }
+
+        tr:hover {
+            background: rgba(66, 153, 225, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: var(--secondary-color);
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .error {
+            color: #fc8181;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            background: rgba(252, 129, 129, 0.1);
+            display: none;
+        }
+
+        .database-info {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .database-card {
+            flex: 1;
+            background: var(--secondary-color);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .database-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Data Aggregator</h1>
+            <p>Query data from Central and Remote databases</p>
+        </div>
+
+        <div class="database-info">
+            <div class="database-card">
+                <h3>Central Database</h3>
+                <p>Location: Local (This computer)</p>
+                <p>Contains: HR and Department data</p>
+            </div>
+            <div class="database-card">
+                <h3>Remote Database</h3>
+                <p>Location: 192.168.161.174</p>
+                <p>Contains: Sales and Customer data</p>
+            </div>
+        </div>
+
+        <div class="query-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="database">Select Database:</label>
+                    <select id="database" onchange="loadTables()">
+                        <option value="">Choose a database...</option>
+                        <option value="central">Central Database</option>
+                        <option value="remote">Remote Database</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="table">Select Table:</label>
+                    <select id="table" onchange="loadColumns()">
+                        <option value="">Select a table...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="field">Select Field:</label>
+                    <select id="field">
+                        <option value="">Select a field...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="operator">Operator:</label>
+                    <select id="operator">
+                        <option value="">Choose operator...</option>
+                        <option value="=">=</option>
+                        <option value="<"><</option>
+                        <option value=">">></option>
+                        <option value="<=">≤</option>
+                        <option value=">=">≥</option>
+                        <option value="!=">≠</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="value">Value:</label>
+                    <input type="text" id="value" placeholder="Enter value...">
+                </div>
+            </div>
+
+            <button onclick="executeQuery()">Get Data</button>
+        </div>
+
+        <div id="error" class="error"></div>
+        <div class="loading">Loading data...</div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        async function loadTables() {
+            const database = document.getElementById('database').value;
+            const tableSelect = document.getElementById('table');
+            
+            if (!database) {
+                tableSelect.innerHTML = '<option value="">Select a table...</option>';
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch('/api/get-tables/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ database }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    tableSelect.innerHTML = '<option value="">Select a table...</option>';
+                    data.tables.forEach(table => {
+                        // Skip Django system tables
+                        if (!table.startsWith('django_') && !table.startsWith('auth_')) {
+                            const option = document.createElement('option');
+                            option.value = table;
+                            option.textContent = table;
+                            tableSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Failed to load tables. Please check database connection.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadColumns() {
+            const database = document.getElementById('database').value;
+            const table = document.getElementById('table').value;
+            const fieldSelect = document.getElementById('field');
+            
+            if (!table) {
+                fieldSelect.innerHTML = '<option value="">Select a field...</option>';
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch('/api/get-columns/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ database, table }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    fieldSelect.innerHTML = '<option value="">Select a field...</option>';
+                    data.columns.forEach(column => {
+                        const option = document.createElement('option');
+                        option.value = column;
+                        option.textContent = column;
+                        fieldSelect.appendChild(option);
+                    });
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Failed to load columns');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function executeQuery() {
+            const database = document.getElementById('database').value;
+            const table = document.getElementById('table').value;
+            const field = document.getElementById('field').value;
+            const operator = document.getElementById('operator').value;
+            const value = document.getElementById('value').value;
+            
+            if (!database || !table) {
+                showError('Please select both database and table');
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch('/api/execute-query/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        database,
+                        table,
+                        field,
+                        operator,
+                        value,
+                        query_type: 'custom'
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayResults(data.data, data.columns);
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Failed to execute query');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResults(data, columns) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<p>No results found</p>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            let table = '<table><thead><tr>';
+            columns.forEach(column => {
+                table += `<th>${column}</th>`;
+            });
+            table += '</tr></thead><tbody>';
+            
+            data.forEach(row => {
+                table += '<tr>';
+                columns.forEach(column => {
+                    let value = row[column];
+                    if (typeof value === 'number') {
+                        value = value.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                    table += `<td>${value !== null ? value : ''}</td>`;
+                });
+                table += '</tr>';
+            });
+            
+            table += '</tbody></table>';
+            resultsDiv.innerHTML = table;
+            resultsDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.querySelector('.loading').style.display = show ? 'block' : 'none';
+            if (show) {
+                document.getElementById('results').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
